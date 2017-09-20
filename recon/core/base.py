@@ -238,7 +238,7 @@ class Recon(framework.Framework):
     def _create_db(self):
         self.query('CREATE TABLE IF NOT EXISTS domains (domain TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS companies (company TEXT, description TEXT, module TEXT)')
-        self.query('CREATE TABLE IF NOT EXISTS netblocks (netblock TEXT, module TEXT)')
+        self.query('CREATE TABLE IF NOT EXISTS netblocks (netblock TEXT, description TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS locations (latitude TEXT, longitude TEXT, street_address TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS vulnerabilities (host TEXT, reference TEXT, example TEXT, publish_date TEXT, category TEXT, status TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS ports (ip_address TEXT, host TEXT, port TEXT, protocol TEXT, module TEXT)')

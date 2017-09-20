@@ -5,6 +5,7 @@ import re
 import tempfile
 import urllib
 import webbrowser
+import urlparse
 
 class GoogleWebMixin(object):
 
@@ -86,3 +87,85 @@ class GoogleWebMixin(object):
             _payload[x] = form.xpath('//input[@name="%s"]/@value' % (x))[0]
         # send the captcha answer
         return self.request('https://ipv4.google.com/sorry/index', payload=_payload, cookiejar=self.cookiejar, agent=self.user_agent)
+
+class DuckDuckGoWebMixin(object):
+
+    cookiejar = CookieJar()
+    user_agent = 'curl/7.50.1'
+
+    def search_ddg_web(self, query, limit=0, start_page=1):
+        url = 'https://duckduckgo.com/lite/'
+        num = 100
+        page = start_page
+        set_page = lambda x: ( (x - 1) * num ) + 1
+        query = self._search_operators_google_to_ddg(query)
+        payload = { 'q': query }
+        domain = [ word for word in query.split() if word.find('site:') != -1 ][0][5:]
+        results = []
+        self.verbose('Searching DuckDuckGo for: %s' % (query))
+        while True:
+            resp = self.request( url, method='POST', payload=payload, redirect=False, cookiejar=self.cookiejar, agent=self.user_agent)
+            # handle error conditions
+            if resp.status_code != 200:
+                self.error('DuckDuckGo encountered an unknown error.')
+                break
+            tree = fromstring(resp.text)
+            links = tree.xpath('//table[3]//a/@href')
+            regmatch = re.compile('^/l/.*uddg=([^/&]+).*')
+            for link in links:
+                matches = regmatch.match(link)
+                if matches != None:
+                    uri = matches.group(1)
+                    self.output(uri)
+                    if urlparse.urlparse(uri).netloc.find(domain) != -1:
+                        results.append( urllib.unquote_plus( uri ) )
+            # check limit
+            if limit == page:
+                break
+            #page += 1
+            #payload['offset'] = set_page(page)
+            # only until one page 
+            break
+        return results
+
+    def _search_operators_google_to_ddg(self, query):
+        return query\
+        .replace('allintext:', 'inbody:')\
+        .replace('allintitle:', 'intitle:')\
+        .replace('allinurl:', 'inurl:')\
+        .replace('intext:', 'inbody:')\
+        .replace('ext:', 'filetype:')
+        #.replace('inurl:', '')
+
+class BingWebMixin(object):
+
+    cookiejar = CookieJar()
+    user_agent = 'curl/7.50.1'
+
+    def search_bing_web(self, query):
+        url = 'http://www.bing.com/search'
+        query = self._search_operators_google_to_bing(query)
+        payload = { 'q': query }
+        domain = [ word for word in query.split() if word.find('site:') != -1 ][0][5:]
+        results = []
+        self.verbose('Searching Bing for: %s' % (query))
+        
+        resp = self.request( url, method='GET', payload=payload, redirect=False, cookiejar=self.cookiejar, agent=self.user_agent)
+        if resp.status_code != 200:
+            self.error('Bing encountered an unknown error.')
+            return results
+
+        tree = fromstring(resp.text)
+        links = tree.xpath('//ol[@id="b_results"]/li[@class="b_algo"]/div[@class="b_title"]//a/@href')
+        for link in links:
+            if urlparse.urlparse(link).netloc.find(domain) != -1:
+                results.append( urllib.unquote_plus( link ) )
+        return results
+
+    def _search_operators_google_to_bing(self, query):
+        return query\
+        .replace('allintext:', 'inbody:')\
+        .replace('allintitle:', 'intitle:')\
+        .replace('allinurl:', 'url:')\
+        .replace('inurl:', 'url:')\
+        .replace('intext:', 'inbody:')\

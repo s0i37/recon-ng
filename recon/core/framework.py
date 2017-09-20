@@ -402,13 +402,14 @@ class Framework(cmd.Cmd):
         if not mute: self._display(data, rowcount, '[company] %s - %s', data.keys())
         return rowcount
 
-    def add_netblocks(self, netblock=None, mute=False):
+    def add_netblocks(self, netblock=None, description=None, mute=False):
         '''Adds a netblock to the database and returns the affected row count.'''
         data = dict(
-            netblock = netblock
+            netblock = netblock,
+            description = self.to_unicode(description)
         )
         rowcount = self.insert('netblocks', data.copy(), data.keys())
-        if not mute: self._display(data, rowcount, '[netblock] %s', data.keys())
+        if not mute: self._display(data, rowcount, '[netblock] %s - %s', data.keys())
         return rowcount
 
     def add_locations(self, latitude=None, longitude=None, street_address=None, mute=False):
@@ -922,6 +923,7 @@ class Framework(cmd.Cmd):
         '''Adds records to the database'''
         table = ''
         # search params for table names
+        params = params.decode('utf-8')
         for table_name in self.get_tables():
             if params.startswith(table_name):
                 params = params[len(table_name)+1:]
