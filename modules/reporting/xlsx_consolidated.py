@@ -28,8 +28,8 @@ class Module(BaseModule):
         return netblock_number
 
     def _get_random_color(self):
-        random_gradient_green = int( random() * (0x50) ) + 0xa0 - ( (len(self.netblocks)*0x20) % 0xa0 )
-        random_gradient_blue = int( random() * (0x50) ) + 0xa0 - ( (len(self.netblocks)*0x20) % 0xa0 )
+        random_gradient_green = int( random() * (0x40) ) + 0xb0 - ( (len(self.netblocks)*0x20) % 0xa0 )
+        random_gradient_blue = int( random() * (0x40) ) + 0xb0 - ( (len(self.netblocks)*0x20) % 0xa0 )
         return '#00%x%x' % (random_gradient_green, random_gradient_blue)
 
     def report_hosts(self, workbook):
@@ -43,7 +43,7 @@ class Module(BaseModule):
         worksheet = workbook.add_worksheet( "hosts" )
         format_bold = workbook.add_format( {'bold': 1} )
         format_colors = []
-        format_vuln = workbook.add_format()
+        format_vuln = workbook.add_format( {'text_wrap': 1, 'valign': 'top'} )
         format_vuln.set_bg_color('red')
         for netblock_number in range( len( self.netblocks ) + 1 ):
             format = workbook.add_format()
