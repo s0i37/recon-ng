@@ -88,6 +88,48 @@ class GoogleWebMixin(object):
         # send the captcha answer
         return self.request('https://ipv4.google.com/sorry/index', payload=_payload, cookiejar=self.cookiejar, agent=self.user_agent)
 
+
+class YahooWebMixin(object):
+
+    cookiejar = CookieJar()
+    user_agent = 'curl/7.50.1'
+
+    def search_yahoo_web(self, query):
+        url = 'https://search.yahoo.com/search'
+        query = self._search_operators_google_to_yahoo(query)
+        payload = { 'p': query, 'fr2': 'sb-top', 'fr': 'yfp-t', 'fp': 1 }
+        domain = [ word for word in query.split() if word.find('site:') != -1 ][0][5:]
+        results = []
+        self.verbose('Searching Yahoo for: %s' % (query))
+        
+        try:
+            resp = self.request( url, method='GET', payload=payload, redirect=False, cookiejar=self.cookiejar, agent=self.user_agent)
+            if resp.status_code != 200:
+                self.error('Yahoo encountered an unknown error.')
+                return results
+        except:
+            self.error('Yahoo encountered an unknown error.')
+            return results
+
+        tree = fromstring(resp.text)
+        links = tree.xpath('//div[@id="web"]//ol/li//h3/a/@href')
+        for link in links:
+            if urlparse.urlparse(link).netloc.find(domain) != -1:
+                results.append( urllib.unquote_plus( link ) )
+        return results
+
+    def _search_operators_google_to_yahoo(self, query):
+        return query\
+        .replace('allintext:', '')\
+        .replace('allintitle:', '')\
+        .replace('intitle:', '')\
+        .replace('intext:', 'intext:')\
+        .replace('allinurl:', 'inurl:')\
+        .replace('inurl:', 'inurl:')\
+        .replace('filetype:', 'filetype:')\
+        .replace('ext:', 'ext:')
+
+
 class DuckDuckGoWebMixin(object):
 
     cookiejar = CookieJar()
@@ -132,10 +174,11 @@ class DuckDuckGoWebMixin(object):
         return query\
         .replace('allintext:', 'inbody:')\
         .replace('allintitle:', 'intitle:')\
-        .replace('allinurl:', 'inurl:')\
         .replace('intext:', 'inbody:')\
-        .replace('ext:', 'filetype:')
-        #.replace('inurl:', '')
+        .replace('ext:', 'filetype(not working):')\
+        .replace('allinurl:', '???:')\
+        .replace('inurl:', '???:')
+
 
 class BingWebMixin(object):
 
@@ -166,6 +209,8 @@ class BingWebMixin(object):
         return query\
         .replace('allintext:', 'inbody:')\
         .replace('allintitle:', 'intitle:')\
-        .replace('allinurl:', 'url:')\
-        .replace('inurl:', 'url:')\
         .replace('intext:', 'inbody:')\
+        .replace('allinurl:', 'url(not working):')\
+        .replace('inurl:', 'url(not working):')\
+        .replace('filetype:', 'filetype(not working):')\
+        .replace('ext:', 'ext(not working):')
