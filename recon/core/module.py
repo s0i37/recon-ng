@@ -49,7 +49,8 @@ class BaseModule(framework.Framework):
                 # to load.
                 self.keys[key] = self.get_key(key)
                 if not self.keys.get(key):
-                    self.error('\'%s\' key not set. %s module will likely fail at runtime. See \'keys add\'.' % (key, self._modulename.split('/')[-1]))
+                    #self.error('\'%s\' key not set. %s module will likely fail at runtime. See \'keys add\'.' % (key, self._modulename.split('/')[-1]))
+                    pass
         self._reload = 0
 
     #==================================================
