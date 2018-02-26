@@ -31,6 +31,7 @@ class Module(BaseModule):
             'shodan': 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
             'twitter': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
             'youtube': 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            'vk': 'http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png',
         }
         media_content = ''
         map_content = ''
