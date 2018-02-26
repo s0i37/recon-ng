@@ -30,7 +30,7 @@ class Module(BaseModule):
 			lon = point.split(',')[1]
 			offset = 0
 			while True:
-				payload = {'lat': lat, 'lon': lon, 'radius': rad, 'count': 100, 'offset': offset, 'start_time': start_time, 'end_time': end_time }
+				payload = {'lat': lat, 'long': lon, 'radius': rad, 'count': 100, 'offset': offset, 'start_time': start_time, 'end_time': end_time }
 				resp = self.request(url, payload=payload)
 				jsonobj = json.loads(resp.text)
 				count = jsonobj["response"][0]
@@ -54,4 +54,5 @@ class Module(BaseModule):
 						time = datetime.fromtimestamp( pushpin.get('created') )
 					except ValueError:
 						time = datetime(1970, 1, 1)
-					self.add_pushpins(source, screen_name, profile_name, profile_url, media_url, thumb_url, message, latitude, longitude, time)
+					if latitude and longitude:
+						self.add_pushpins(source, screen_name, profile_name, profile_url, media_url, thumb_url, message, latitude, longitude, time)
