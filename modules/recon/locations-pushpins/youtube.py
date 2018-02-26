@@ -38,7 +38,8 @@ class Module(BaseModule):
                     message = video['snippet']['title']
                     latitude, longitude = self.get_video_geo(video['id']['videoId'])
                     time = datetime.strptime(video['snippet']['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                    self.add_pushpins(source, screen_name, profile_name, profile_url, media_url, thumb_url, message, latitude, longitude, time)
+                    if latitude and longitude:
+                        self.add_pushpins(source, screen_name, profile_name, profile_url, media_url, thumb_url, message, latitude, longitude, time)
                 processed += len(resp.json['items'])
                 self.verbose('%s videos processed.' % (processed))
                 if 'nextPageToken' in resp.json:
@@ -49,6 +50,9 @@ class Module(BaseModule):
     def get_video_geo(self, vid):
         payload = {'part': 'recordingDetails', 'id': vid, 'key': self.api_key}
         resp = self.request(self.url % 'videos', payload=payload)
-        latitude = resp.json['items'][0]['recordingDetails']['location']['latitude']
-        longitude = resp.json['items'][0]['recordingDetails']['location']['longitude']
-        return latitude, longitude
+        try:
+            latitude = resp.json['items'][0]['recordingDetails']['location']['latitude']
+            longitude = resp.json['items'][0]['recordingDetails']['location']['longitude']
+            return latitude, longitude
+        except:
+            return (None,None)
