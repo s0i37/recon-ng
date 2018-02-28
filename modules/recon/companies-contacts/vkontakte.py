@@ -11,9 +11,9 @@ class Module(BaseModule):
 
     meta = {
         'Name': 'Vkontakte Contact Enumerator',
-        'Author': 'Igor Ivanov (@lctrcl)',
-        'Version': 'v0.0.1',
-        'Description': 'Harvests contacts from vk.com. Updates the \'contacts\' table with the results',
+        'Author': 'Igor Ivanov (@lctrcl), @s0i37',
+        'Version': 'v0.0.2',
+        'Description': "Harvests contacts from vk.com. Updates the 'contacts' table with the results",
         'query': 'SELECT DISTINCT company FROM companies WHERE company IS NOT NULL'
     }
     basevkurl = 'https://api.vk.com/method/'
@@ -55,14 +55,15 @@ class Module(BaseModule):
     def get_contacts(self, company, token):
         method = 'users.search'
         url = self.basevkurl + method
-        resp = self.request(url, payload = {'company': company, 'access_token': token, 'fields': 'contacts', 'count': 1000})
+        resp = self.request(url, payload = {'company': company, 'access_token': token, 'fields': 'contacts,screen_name', 'count': 1000})
         for user in resp.json['response']:
             if type(user) is not int:
-                print str(user)
                 first_name = user[u'first_name']
                 last_name = user[u'last_name']
                 uid = user[u'uid']
-                self.output('%s %s, ID: %s' % (first_name, last_name, uid))
-                self.add_contacts(first_name=first_name,  last_name=last_name)
-                self.add_profiles(username=uid, resource='VK', category='social')
+                username = user[u'screen_name']
+                self.output( '%s %s, ID: %s' % (first_name, last_name, username) )
+                self.add_contacts( first_name=first_name,  last_name=last_name )
+                if "id%d"%uid != username:
+                    self.add_profiles( username=username, resource='VK', url='https://vk.com/' + username, category='social', notes="%s %s" % (first_name, last_name) )
         return

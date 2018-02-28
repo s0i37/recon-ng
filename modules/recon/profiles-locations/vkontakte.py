@@ -6,11 +6,11 @@ from datetime import datetime
 class Module(BaseModule):
 
     meta = {
-        'Name': 'Vkontakte Contact Enumerator',
-        'Author': '',
+        'Name': 'Vkontakte Locations Enumerator',
+        'Author': '@s0i37',
         'Version': 'v0.0.1',
-        'Description': '',
-        'query': 'SELECT DISTINCT username FROM profiles WHERE username IS NOT NULL'
+        'Description': 'Get all possible locations by usernames',
+        'query': "SELECT DISTINCT username FROM profiles WHERE username IS NOT NULL AND resource LIKE 'VK' COLLATE NOCASE"
     }
     basevkurl = 'https://api.vk.com/method/'
 
