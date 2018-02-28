@@ -32,11 +32,11 @@ class Module(BaseModule):
         if not access_token:
             return
         
-        if self.request( self.basevkurl + "account.getInfo", payload={'access_token': access_token} ).json.get('error'):
-            self.delete_key('vkontakte_token')
-            access_token = self.get_vkontakte_access_token()
-            if not access_token:
-                return
+        #if self.request( self.basevkurl + "account.getInfo", payload={'access_token': access_token} ).json.get('error'):
+        #    self.delete_key('vkontakte_token')
+        #    access_token = self.get_vkontakte_access_token()
+        #    if not access_token:
+        #        return
 
         if self.login(access_token):
             for company in companies:
@@ -58,9 +58,11 @@ class Module(BaseModule):
         resp = self.request(url, payload = {'company': company, 'access_token': token, 'fields': 'contacts', 'count': 1000})
         for user in resp.json['response']:
             if type(user) is not int:
+                print str(user)
                 first_name = user[u'first_name']
                 last_name = user[u'last_name']
                 uid = user[u'uid']
                 self.output('%s %s, ID: %s' % (first_name, last_name, uid))
                 self.add_contacts(first_name=first_name,  last_name=last_name)
+                self.add_profiles(username=uid, resource='VK', category='social')
         return
