@@ -25,22 +25,22 @@ class Module(BaseModule):
 
     def get_photos(self, user_id, album_id, access_token):
         url = 'https://api.vk.com/method/photos.get'
-        resp = self.request( url, payload = {'owner_id': user_id, 'album_id': album_id, 'access_token': access_token} )
+        resp = self.request( url, payload = {'owner_id': user_id, 'album_id': album_id, 'access_token': access_token, 'version': '5.92'} )
         if resp.json.get('response'):
             for photo in resp.json['response']:
                 yield photo
 
     def get_albums(self, user_id, access_token):
         url = 'https://api.vk.com/method/photos.getAlbums'
-        resp = self.request( url, payload = {'owner_id': user_id, 'access_token': access_token} )
+        resp = self.request( url, payload = {'owner_id': user_id, 'access_token': access_token, 'version': '5.92'} )
         if resp.json.get('response'):
             for album in resp.json['response']:
                 album_id = album['aid']
                 yield album_id
 
-    def get_users_id(self, usernames):
+    def get_users_id(self, usernames, access_token):
         url = 'https://api.vk.com/method/users.get'
-        resp = self.request( url, payload = { 'user_ids': ','.join(usernames) } )
+        resp = self.request( url, payload = { 'user_ids': ','.join(usernames), 'access_token': access_token, 'version': '5.92' } )
         if resp.json.get('response'):
             for user in resp.json['response']:
                 yield user['uid']
@@ -50,9 +50,10 @@ class Module(BaseModule):
         if not access_token:
             return
         
-        for user_id in self.get_users_id(usernames):
+        for user_id in self.get_users_id(usernames, access_token):
+            self.output('user_id: %d' % user_id)
             for album_id in self.get_albums(user_id, access_token):
-                self.output( 'user:%s - album:%s' % (user_id, album_id) )
+                self.output('album: %s' % album_id)
                 for pushpin in self.get_photos(user_id, album_id, access_token):
                     if 'lat' in pushpin.keys() and 'long' in pushpin.keys():
                         source = "VK"
