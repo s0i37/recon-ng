@@ -19,15 +19,15 @@ class Module(BaseModule):
         xml = builder.ElementMaker()
         with open(filename, 'wb') as o:
             xml_nmap = xml.nmaprun()
-            for ip_address,_ in self.query("SELECT ip_address,1 FROM ports"):
+            for ip_address,_ in self.query("SELECT ip_address,1 FROM hosts GROUP BY ip_address"):
                 xml_status = xml.status( {'state':'up', 'reason':'user-set', 'reason_ttl':'0'} )
                 xml_address = xml.address( {'addr':ip_address, 'addrtype':'ipv4'} )
                 xml_hostnames = xml.hostnames()
-                for domain,_ in self.query("SELECT host,1 FROM hosts where ip_address='%s'" % ip_address):
+                for domain,_ in self.query("SELECT host,1 FROM hosts WHERE ip_address='%s'" % ip_address):
                     if domain:
                         xml_hostnames.insert(0, xml.hostname( {'name':domain, 'type':'PTR'} ) )                    
                 xml_ports = xml.ports()
-                for port,protocol in self.query("SELECT port,protocol from ports where ip_address='%s'" % ip_address):
+                for port,protocol in self.query("SELECT port,protocol FROM ports WHERE ip_address='%s'" % ip_address):
                     xml_ports.insert( 0, xml.port( {'protocol':'tcp', 'portid':port}, xml.state( {'state':'open'} ), xml.service( {'name': protocol if not protocol is None else ''} ) ) )
                 
                 xml_nmap.insert( 0,
