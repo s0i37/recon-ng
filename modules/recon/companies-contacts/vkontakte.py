@@ -3,17 +3,18 @@
 from recon.core.module import BaseModule
 
 # create application (web-site)
-# https://oauth.vk.com/authorize?client_id=<CLIENT_ID>&display=page&redirect_uri=http://lo/recon&scope=friends&response_type=code&v=5.62
-# redirect http://lo/recon?code=<CODE>
-# https://oauth.vk.com/access_token?client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&code=<CODE>&redirect_uri=http://lo/recon
+# https://oauth.vk.com/authorize?client_id=<CLIENT_ID>&display=page&redirect_uri=http://localhost:31337recon&scope=friends&response_type=code&v=5.62
+# redirect http://localhost:31337/?code=<CODE>
+# https://oauth.vk.com/access_token?client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&code=<CODE>&redirect_uri=http://localhost:31337
 
 class Module(BaseModule):
 
     meta = {
-        'Name': 'Vkontakte Contact Enumerator',
-        'Author': 'Igor Ivanov (@lctrcl), @s0i37',
-        'Version': 'v0.0.2',
-        'Description': "Harvests contacts from vk.com. Updates the 'contacts' table with the results",
+        'Name': 'vk.com Profile and Contact Harvester',
+        'Author': '@s0i37',
+        'Version': 'v0.1',
+        'Description': "Harvests profiles from vkontakte. Updates the 'contacts' and 'profiles' tables",
+        'required_keys': ['vkontakte_api', 'vkontakte_secret'],
         'query': 'SELECT DISTINCT company FROM companies WHERE company IS NOT NULL'
     }
     basevkurl = 'https://api.vk.com/method/'
@@ -28,42 +29,40 @@ class Module(BaseModule):
         )
 
     def module_run(self, companies):
+        #self.delete_key('vkontakte_token')
         access_token = self.get_vkontakte_access_token()
         if not access_token:
             return
-        
-        #if self.request( self.basevkurl + "account.getInfo", payload={'access_token': access_token} ).json.get('error'):
-        #    self.delete_key('vkontakte_token')
-        #    access_token = self.get_vkontakte_access_token()
-        #    if not access_token:
-        #        return
 
-        if self.login(access_token):
-            for company in companies:
-                self.heading(company, level=0)
-                self.get_contacts(company, access_token)
+        for company in companies:
+            self.heading(company, level=0)
+            self.get_groups(company, access_token)
 
-    def login(self, token):
-        if token:
-            url  = self.basevkurl +  u'users.get?user_ids=1&access_token=%s' % token
-            resp = self.request(url)
-            if resp.status_code == 200:
-                return True
-        else:
-            return False
+    def get_groups(self, company, token):
+        method = 'groups.search'            
+        url = self.basevkurl + method
+        resp = self.request(url, payload = {'q': company, 'access_token': token, 'count': 1000, 'version': '5.92'})
+        for group in resp.json['response']:
+            if type(group) is not int:
+                self.output( "%s (%s) - %s" % ( group['name'], group['screen_name'], 'closed' if group['is_closed'] == 1 else 'open' ) )
+                self.get_contacts(group['gid'], token)
 
-    def get_contacts(self, company, token):
+    def get_contacts(self, group_id, token):
         method = 'users.search'
         url = self.basevkurl + method
-        resp = self.request(url, payload = {'company': company, 'access_token': token, 'fields': 'contacts,screen_name', 'count': 1000})
-        for user in resp.json['response']:
-            if type(user) is not int:
-                first_name = user[u'first_name']
-                last_name = user[u'last_name']
-                uid = user[u'uid']
-                username = user[u'screen_name']
-                self.output( '%s %s, ID: %s' % (first_name, last_name, username) )
-                self.add_contacts( first_name=first_name,  last_name=last_name )
-                if "id%d"%uid != username:
-                    self.add_profiles( username=username, resource='VK', url='https://vk.com/' + username, category='social', notes="%s %s" % (first_name, last_name) )
-        return
+        offset = 0
+        while True:
+            resp = self.request(url, payload = {'group_id': group_id, 'access_token': token, 'fields': 'contacts,screen_name', 'count': 10, 'offset': offset, 'version': '5.92'})
+            count = resp.json['response'][0]
+            for user in resp.json['response']:
+                if type(user) is not int:
+                    offset += 1
+                    first_name = user['first_name']
+                    last_name = user['last_name']
+                    uid = user['uid']
+                    username = user['screen_name']
+                    self.add_contacts( first_name=first_name, last_name=last_name )
+                    if "id%d"%uid != username:
+                        self.add_profiles( username=username, resource='VK', url='https://vk.com/' + username, category='social', notes="%s %s" % (first_name, last_name) ) 
+            if offset >= count:
+                break
